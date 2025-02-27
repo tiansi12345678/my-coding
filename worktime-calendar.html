@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>下班时间记录</title>
+    <style>
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .calendar-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            width: 800px;
+            margin-bottom: 20px;
+        }
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .month-nav {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .nav-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .current-month {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+        }
+        .weekday {
+            text-align: center;
+            font-weight: bold;
+            padding: 10px;
+            background: #4CAF50;
+            color: white;
+        }
+        .date-cell {
+            border: 1px solid #ddd;
+            padding: 10px;
+            min-height: 80px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .date-number {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .work-time-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .work-time {
+            font-size: 14px;
+            color: #666;
+        }
+        .emoji {
+            font-size: 20px;
+        }
+        .add-time-btn, .edit-time-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 5px;
+            align-self: flex-start;
+        }
+        .edit-time-btn {
+            background: #FFA500;
+        }
+        .past-date {
+            color: #999;
+            background: #f9f9f9;
+        }
+        .page-title {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .main-title {
+            font-size: 28px;
+            color: #2c3e50;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .developer {
+            font-size: 16px;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        .description {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .description span {
+            display: flex;
+            align-items: center;
+        }
+        .description .emoji {
+            font-size: 20px;
+            margin-left: 5px;
+        }
+        
+        /* 日志区域样式 */
+        .log-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            width: 800px;
+            margin-top: 20px;
+        }
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .log-content {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .clear-log-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        /* 时间选择器模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 300px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .modal-title {
+            margin-top: 0;
+            color: #333;
+        }
+        .time-picker {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+        }
+        .time-picker select {
+            font-size: 18px;
+            padding: 8px;
+            margin: 0 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f8f8f8;
+        }
+        .time-separator {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 0 5px;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 45%;
+        }
+        .confirm-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .cancel-btn {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 850px) {
+            .calendar-container, .log-container {
+                width: 95%;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .date-cell {
+                min-height: 60px;
+                padding: 5px;
+            }
+            .emoji {
+                font-size: 16px;
+            }
+            .work-time {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calendar-container">
+        <!-- 添加标题区域 -->
+        <div class="page-title">
+            <div class="main-title">下班记录晴雨表</div>
+            <div class="developer">开发者：田思</div>
+        </div>
+        <!-- 添加说明文字 -->
+        <div class="description">
+            <span>按时下班<span class="emoji">😊</span></span>
+            <span>超时下班<span class="emoji">😢</span></span>
+        </div>
+        
+        <div class="calendar-header">
+            <div class="month-nav">
+                <button class="nav-btn" onclick="previousMonth()">上个月</button>
+                <div class="current-month" id="currentMonth"></div>
+                <button class="nav-btn" onclick="nextMonth()">下个月</button>
+            </div>
+        </div>
+        <div class="calendar-grid" id="calendarGrid">
+            <div class="weekday">日</div>
+            <div class="weekday">一</div>
+            <div class="weekday">二</div>
+            <div class="weekday">三</div>
+            <div class="weekday">四</div>
+            <div class="weekday">五</div>
+            <div class="weekday">六</div>
+        </div>
+    </div>
+
+    <!-- 添加日志区域 -->
+    <div class="log-container">
+        <div class="log-header">
+            <h3 style="margin: 0;">运行日志</h3>
+            <button class="clear-log-btn" onclick="clearLog()">清除日志</button>
+        </div>
+        <div class="log-content" id="logContent"></div>
+    </div>
+
+    <!-- 时间选择器模态框 -->
+    <div id="timePickerModal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-title" id="modalTitle">选择下班时间</h2>
+            <div class="time-picker">
+                <select id="hourSelect"></select>
+                <span class="time-separator">:</span>
+                <select id="minuteSelect"></select>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn confirm-btn" onclick="confirmTimeSelection()">确定</button>
+                <button class="modal-btn cancel-btn" onclick="closeModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取API基础URL
+        const apiBaseUrl = window.location.origin;
+        
+        // 日志函数
+        function log(message, type = 'info') {
+            const logContent = document.getElementById('logContent');
+            const timestamp = new Date().toLocaleTimeString();
+            let formattedMessage = '';
+            let logType = String(type || 'info'); // 确保 type 是字符串
+
+            // 格式化消息
+            if (typeof message === 'object') {
+                try {
+                    formattedMessage = JSON.stringify(message, null, 2);
+                } catch (e) {
+                    formattedMessage = "无法序列化对象";
+                }
+            } else {
+                formattedMessage = String(message || '');
+            }
+
+            // 创建新的日志条目
+            const logEntry = `[${timestamp}] ${logType.toUpperCase()}: ${formattedMessage}\n`;
+            
+            // 添加到页面
+            logContent.textContent = logEntry + logContent.textContent;
+            
+            // 同时输出到浏览器控制台
+            if (logType === 'error') {
+                console.error(formattedMessage);
+            } else {
+                console.log(formattedMessage);
+            }
+        }
+
+        // 清除日志
+        function clearLog() {
+            document.getElementById('logContent').textContent = '';
+        }
+
+        let workTimes = {};
+        let currentDate = new Date();
+        let currentDateKey = '';
+
+        // 从服务器加载数据
+        async function loadWorkTimes() {
+            try {
+                log('开始加载数据...');
+                const response = await fetch(`${apiBaseUrl}/api/worktimes`);
+                log(`API响应状态: ${response.status}`);
+                const data = await response.json();
+                log('加载的数据:');
+                log(data);
+                
+                // 修改这里的数据处理逻辑
+                workTimes = data.reduce((acc, item) => {
+                    // 从 ISO 日期格式中提取 YYYY-MM-DD 部分
+                    const dateStr = item.date.substring(0, 10);
+                    // 从时间格式中提取 HH:MM 部分
+                    const timeStr = item.time.substring(0, 5);
+                    acc[dateStr] = timeStr;
+                    return acc;
+                }, {});
+                
+                log('处理后的数据:');
+                log(workTimes);
+                initCalendar();
+            } catch (error) {
+                log(`加载数据失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 初始化日历
+        function initCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            const monthDisplay = document.getElementById('currentMonth');
+            monthDisplay.textContent = `${currentDate.getFullYear()}年${currentDate.getMonth() + 1}月`;
+            
+            // 清除现有内容，保留星期标题
+            const weekdays = grid.querySelectorAll('.weekday');
+            grid.innerHTML = '';
+            weekdays.forEach(day => grid.appendChild(day));
+
+            const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+            const cutoffDate = new Date(2025, 1, 24); // 2025年2月24日
+
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const currentCellDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+                const dateKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                log(`检查日期: ${dateKey}, 存储的时间: ${workTimes[dateKey] || '无'}`);
+                
+                const cell = document.createElement('div');
+                cell.className = 'date-cell';
+                if (currentCellDate <= cutoffDate) {
+                    cell.classList.add('past-date');
+                }
+
+                // 判断下班时间是否超过 21:30
+                let emoji = '';
+                if (workTimes[dateKey]) {
+                    const [hours, minutes] = workTimes[dateKey].split(':').map(Number);
+                    const timeInMinutes = hours * 60 + minutes;
+                    const limitInMinutes = 21 * 60 + 30; // 21:30
+                    emoji = timeInMinutes <= limitInMinutes ? '😊' : '😢';
+                }
+
+                let cellContent = `<div class="date-number">${day}</div>`;
+                if (workTimes[dateKey]) {
+                    cellContent += `
+                        <div class="work-time-container">
+                            <div class="work-time">${workTimes[dateKey]}</div>
+                            <span class="emoji">${emoji}</span>
+                        </div>`;
+                    if (currentCellDate > cutoffDate) {
+                        cellContent += `<button class="edit-time-btn" onclick="editWorkTime('${dateKey}')">修改</button>`;
+                    }
+                } else if (currentCellDate > cutoffDate) {
+                    cellContent += `<button class="add-time-btn" onclick="addWorkTime('${dateKey}')">记录时间</button>`;
+                }
+
+                cell.innerHTML = cellContent;
+                grid.appendChild(cell);
+            }
+        }
+
+        // 添加下班时间
+        function addWorkTime(dateKey) {
+            currentDateKey = dateKey;
+            document.getElementById('modalTitle').textContent = '选择下班时间';
+            openModal('21:30');
+        }
+
+        // 修改下班时间
+        function editWorkTime(dateKey) {
+            currentDateKey = dateKey;
+            document.getElementById('modalTitle').textContent = '修改下班时间';
+            openModal(workTimes[dateKey]);
+        }
+
+        // 打开时间选择器模态框
+        function openModal(defaultTime = '21:30') {
+            const [defaultHour, defaultMinute] = defaultTime.split(':').map(Number);
+            
+            // 填充小时选项
+            const hourSelect = document.getElementById('hourSelect');
+            hourSelect.innerHTML = '';
+            for (let i = 0; i < 24; i++) {
+                const option = document.createElement('option');
+                option.value = String(i).padStart(2, '0');
+                option.textContent = String(i).padStart(2, '0');
+                if (i === defaultHour) {
+                    option.selected = true;
+                }
+                hourSelect.appendChild(option);
+            }
+            
+            // 填充分钟选项
+            const minuteSelect = document.getElementById('minuteSelect');
+            minuteSelect.innerHTML = '';
+            for (let i = 0; i < 60; i++) {
+                const option = document.createElement('option');
+                option.value = String(i).padStart(2, '0');
+                option.textContent = String(i).padStart(2, '0');
+                if (i === defaultMinute) {
+                    option.selected = true;
+                }
+                minuteSelect.appendChild(option);
+            }
+            
+            // 显示模态框
+            document.getElementById('timePickerModal').style.display = 'block';
+        }
+
+        // 关闭时间选择器模态框
+        function closeModal() {
+            document.getElementById('timePickerModal').style.display = 'none';
+        }
+
+        // 确认时间选择
+        function confirmTimeSelection() {
+            const hour = document.getElementById('hourSelect').value;
+            const minute = document.getElementById('minuteSelect').value;
+            const time = `${hour}:${minute}`;
+            
+            confirmTime(currentDateKey, time);
+            closeModal();
+        }
+
+        // 确认并保存时间
+        async function confirmTime(dateKey, time) {
+            try {
+                log('发送数据:', { date: dateKey, time });
+                const response = await fetch(`${apiBaseUrl}/api/worktimes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ date: dateKey, time })
+                });
+                
+                if (response.ok) {
+                    log('保存成功');
+                    workTimes[dateKey] = time;
+                    initCalendar();
+                } else {
+                    log(`保存失败: ${response.statusText}`, 'error');
+                    alert('保存失败，请重试');
+                }
+            } catch (error) {
+                log('保存数据失败:', 'error');
+                log(error.message, 'error');
+                alert('保存失败，请检查网络连接');
+            }
+        }
+
+        function previousMonth() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            initCalendar();
+        }
+
+        function nextMonth() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            initCalendar();
+        }
+
+        // 页面加载时从服务器获取数据
+        window.onload = loadWorkTimes;
+    </script>
+</body>
+</html>
